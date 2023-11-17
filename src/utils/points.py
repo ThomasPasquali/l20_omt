@@ -12,12 +12,6 @@ def sort_minima(list_of_minima):
     list_of_minima.sort(key=lambda minimum : minimum.value)
     return list_of_minima
 
-
-def value_of_lit_on_point(lit, point, all_vars):
-    lit_L2O = L2O_lambda(lit, all_vars)
-    lit_value = lit_L2O(point)
-    return lit_value
-
 def sort_dict_by_value(dict):
     return {k: v for k, v in sorted(dict.items(), key=lambda item: item[1])}
 
