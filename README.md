@@ -9,10 +9,10 @@ Theories supported :
 ## Dependencies
 - Python3 (3.10.12)
 - Python packages:
--- z3-solver   (4.12.1.0)
--- sympy       (1.11.1)
--- scipy       (1.9.1)
--- numpy       (1.23.3)
+  - z3-solver   (4.12.1.0)
+  - sympy       (1.11.1)
+  - scipy       (1.9.1)
+  - numpy       (1.23.3)
 
 ## How to run
 From the main folder:
