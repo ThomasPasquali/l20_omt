@@ -13,7 +13,7 @@ Theories supported :
   - sympy       (1.11.1)
   - scipy       (1.9.1)
   - numpy       (1.23.3)
-
+  - cython      (3.0.5)
 ## How to run
 From the main folder:
 
