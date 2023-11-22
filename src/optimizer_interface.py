@@ -44,7 +44,7 @@ def search_candidate_approximate_solutions(args, formula, variables=None):
     dim = len(variables)
     formula = formula_to_BoolRef(formula)
 
-    L = L2O_lambda(formula, variables)
+    L = L2O_lambda(args, formula, variables)
 
     local_mins = run_basinhopping(args, L, dim)
 

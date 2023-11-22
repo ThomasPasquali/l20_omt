@@ -35,9 +35,11 @@ def main(args):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(prog='')
-    parser.add_argument('smt2_file', help='specify the smt2 file to analyze.')
+    parser.add_argument('smt2_file', help='specify the smt2 file to analyze.')    
+    parser.add_argument ('--debug', help='debug mode', action='store_true', required=False, default=False)
     parser.add_argument ('--niter', help='number of basin hopping iterations', action='store', required=False, type=int, default=3)
     parser.add_argument ('--stepsize', help='maximum step size for basin hopping random jump', action='store', required=False, type=int, default=10)
+    parser.add_argument ('--disable_autowrap', help='disable autowrap when generating L2O function', action='store_true', required=False, default=False)
 
     args= parser.parse_args()   
     

@@ -59,7 +59,27 @@ def L2O(formula):
         raise Exception("kind %s of subformula not supported" % decl_f)
 
 
-def L2O_lambda(formula, variables=None):
+def make_lambda(R, variables, args):
+    if args.disable_autowrap:
+        L = lambdify([variables], R, 'scipy')      # slower
+    else:
+        try:
+            R_subs = R
+            R_subs = R_subs.subs(sym.pi, 3.14159265358979323846)
+            R_subs = R_subs.subs(sym.sqrt(2), 1.41421356237309504880)
+            R_wrapped = autowrap(R_subs, backend="cython", args=variables)    
+            L = lambda X: R_wrapped(*X)
+        except Exception as e:
+            if args.debug:
+                print("Exception:", e)
+            else:
+                print("An exception has occurred (to print the exception text use debug mode).")
+            print("\n\nMake lambda of objective function using sympy lambdify (slower than autowrap).")
+            L = lambdify([variables], R, 'scipy')  
+    return L
+
+
+def L2O_lambda(args, formula, variables=None):
 
     formula = formula_to_BoolRef(formula)
 
@@ -68,12 +88,6 @@ def L2O_lambda(formula, variables=None):
 
     R = L2O(formula)
 
-    #print("\nR",R)
-
-    R = R.subs(sym.pi, 3.14159265358979323846)
-    R_wrapped = autowrap(R, backend="cython", args=variables)
-
-    L = lambda X: R_wrapped(*X)
-    #L = lambdify([variables], R, 'scipy')      # this is slow
+    L = make_lambda(R, variables, args)
 
     return L
