@@ -42,20 +42,24 @@ def get_vars_z3(formula):
     # return z3.z3util.get_vars(formula)    # this is slow
 
 
-def get_vars(formula, vars_z3=None):
+def get_vars_sym(formula, vars_z3=None):
+
+    dict_sym2z3_vars = {}
 
     if not vars_z3:
         vars_z3 = get_vars_z3(formula)
 
-    variables = []
+    vars_sym = []
 
     for var_z3 in vars_z3:
-        var = var_z3.__str__()
-        variables.append(sym.symbols(var))
+        var_name = var_z3.__str__()
+        var_sym = sym.symbols(var_name)
+        vars_sym.append(var_sym)
+        dict_sym2z3_vars[var_sym] = var_z3
 
-    variables = tuple(variables)
+    vars_sym = tuple(vars_sym)
 
-    return variables
+    return vars_sym, dict_sym2z3_vars
 
 def remove_pi_from_vars(variables):
     return list(filter(lambda var: var.name!="pi", variables))
@@ -151,47 +155,23 @@ def gt2lt(atom):
     new_atom = children[1] < children[0]
     return new_atom
 
-non_supported_chars = ["!", ".", "@", "~", "#"]
-dict_nonsupp_chars = {"!":"_exclm_", ".":"_dot_", "@":"_at_", "~":"_tilde_", "#":"_hash_"}
-
-def create_sanitized_vars(vars_z3):
-    new_vars_list = []
-    map_vars = []
-    for var in vars_z3:
-        var_name = var.__str__()
-        new_var_name = var_name
-        for non_supported_char in non_supported_chars:
-            new_var_name = new_var_name.replace(non_supported_char, dict_nonsupp_chars[non_supported_char])
-        if z3.is_real(var):
-            new_var = z3.Real(new_var_name)
-        elif z3.is_bool(var):
-            new_var = z3.Bool(new_var_name)
-        else: 
-            raise Exception("Unsupported kind for ", var)
-        new_vars_list.append(new_var)
-        map_vars.append((var, new_var))
-    return new_vars_list, map_vars
-
-def sanitize_var_names(formula, vars_z3):
-    formula = formula_to_BoolRef(formula)
-    new_vars_list, map_vars= create_sanitized_vars(vars_z3)
-    formula = z3.substitute(formula, map_vars)
-    return formula, new_vars_list
-
 def create_bool2_real_vars(vars_z3):
     x = z3.Real('x')
     b2r_vars = []
-    map_b2r_vars = {}
+    dict_b2r_vars = {}
+    dict_r2b_vars = {}
     for var in vars_z3:
         if var.sort().is_bool():
             b2r_var = z3.Real("b2r_"+var.__str__())
             b2r_vars.append(b2r_var)
-            map_b2r_vars[var] = b2r_var
+            dict_b2r_vars[var] = b2r_var
+            dict_r2b_vars[b2r_var] = var
         else:
-            map_b2r_vars[var] = None
-    return b2r_vars, map_b2r_vars
+            dict_b2r_vars[var] = var
+            dict_r2b_vars[var] = var
+    return b2r_vars, dict_b2r_vars, dict_r2b_vars
 
-def formula_bool2real(formula, map_b2r_vars):
+def formula_bool2real(formula, dict_b2r_vars):
     # assumes formula is in cnf
     decl_f = formula.decl()
     kind_f = decl_f.kind()
@@ -199,12 +179,12 @@ def formula_bool2real(formula, map_b2r_vars):
     children = formula.children()
     
     if kind_f == z3.Z3_OP_AND:
-        return z3.And([formula_bool2real(ch, map_b2r_vars) for ch in children])
+        return z3.And([formula_bool2real(ch, dict_b2r_vars) for ch in children])
     elif kind_f == z3.Z3_OP_OR:
-        return z3.Or([formula_bool2real(ch, map_b2r_vars) for ch in children])
+        return z3.Or([formula_bool2real(ch, dict_b2r_vars) for ch in children])
     elif kind_f == z3.Z3_OP_UNINTERPRETED:
         if formula.num_args() == 0:
-            return map_b2r_vars[formula] >= 1
+            return dict_b2r_vars[formula] >= 1
         else:
             raise Exception("Formula not supported: ", formula)
     elif kind_f == z3.Z3_OP_NOT:    
@@ -214,7 +194,7 @@ def formula_bool2real(formula, map_b2r_vars):
         if kind_subf in [z3.Z3_OP_LE, z3.Z3_OP_LT, z3.Z3_OP_GE, z3.Z3_OP_GT, z3.Z3_OP_EQ]:
             return formula
         elif kind_subf == z3.Z3_OP_UNINTERPRETED and subf.num_args()==0 :
-            return map_b2r_vars[subf] <= -1
+            return dict_b2r_vars[subf] <= -1
         else:
             raise Exception("Negation not supported: ", formula)
     elif kind_f in [z3.Z3_OP_LE, z3.Z3_OP_LT, z3.Z3_OP_GE, z3.Z3_OP_GT, z3.Z3_OP_EQ]:
@@ -225,9 +205,9 @@ def formula_bool2real(formula, map_b2r_vars):
 
 def bool2real(formula, vars_z3):
     formula = formula_to_BoolRef(formula)
-    new_b2r_vars, map_b2r_vars = create_bool2_real_vars(vars_z3)
-    formula = formula_bool2real(formula, map_b2r_vars)
-    return formula, new_b2r_vars
+    new_b2r_vars, dict_b2r_vars, dict_r2b_vars = create_bool2_real_vars(vars_z3)
+    formula = formula_bool2real(formula, dict_b2r_vars)
+    return formula, new_b2r_vars, dict_r2b_vars
 
 # Warning: does not distribute not(a == b) ; negation of eqs are treated separately
 def distribute_not(formula):

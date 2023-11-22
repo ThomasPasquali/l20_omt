@@ -6,7 +6,7 @@ import scipy.optimize as op
 from datetime import datetime
 from pprint import pprint
 
-from utils.logic import get_vars, formula_to_BoolRef
+from utils.logic import get_vars_sym, formula_to_BoolRef
 
 from L2O import L2O_lambda
 
@@ -40,7 +40,7 @@ def run_basinhopping(args, L, dim, starting_point=None):
 def search_candidate_approximate_solutions(args, formula, variables=None):
 
     if not variables:
-        variables = get_vars(formula)
+        variables, dict_sym2z3_vars = get_vars_sym(formula)
     dim = len(variables)
     formula = formula_to_BoolRef(formula)
 

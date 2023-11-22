@@ -1,5 +1,7 @@
 import argparse
 import z3
+from parser.parser import formula_from_text, rename_variables, get_dict_original_names_vars
+from utils.logic import get_vars_sym, get_vars_z3, to_cnf, distribute_not, bool2real, remove_pi_from_vars
 from optimizer_interface import search_candidate_approximate_solutions
 from utils.points import sort_minima, printAssignment, printLocalMin
 
@@ -18,13 +20,12 @@ def main(args):
     
     vars_z3 = get_vars_z3(formula)
      
-    formula, new_vars_list = sanitize_var_names(formula, vars_z3) # Sympy does not accept '!', '@', and '.' in variables names
-    formula, new_b2r_vars = bool2real(formula, new_vars_list)
+    formula, new_vars_list, dict_renamed_vars = rename_variables(formula, vars_z3)
+    formula, new_b2r_vars, dict_r2b_vars = bool2real(formula, new_vars_list)
     formula = distribute_not(formula) 
-
-    vars_sym = get_vars(formula)
+    vars_sym, dict_sym2z3_vars = get_vars_sym(formula)
+    dict_orig_name_vars = get_dict_original_names_vars(vars_sym, dict_sym2z3_vars, dict_r2b_vars, dict_renamed_vars)
     vars_sym = remove_pi_from_vars(vars_sym)
-    #print("variables:", vars_sym)
 
     local_mins = search_candidate_approximate_solutions(args, formula, vars_sym)
     local_mins = sort_minima(local_mins)
@@ -32,9 +33,9 @@ def main(args):
     for local_min in local_mins:
         point = local_min.point
         assignment = {vars_sym[i]: point[i] for i in range(len(vars_sym))}
-        #print("\n")
+        print("\n")
+        printAssignment(assignment, dict_orig_name_vars)
         #printLocalMin(local_min)
-        #printAssignment(assignment)
 
 if __name__ == "__main__":
     

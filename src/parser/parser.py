@@ -1,5 +1,6 @@
 
 import z3
+from utils.logic import formula_to_BoolRef
 
 def formula_from_text(text):
     text = fix_transcendental_decl_for_z3(text)
@@ -72,6 +73,9 @@ def fix_transcendental_decl_for_z3(text):
             "(declare-fun", "(declare-fun pi () Real)\n(declare-fun", 1)
 
     text = text.replace("power", "pow")
+    text = text.replace("arctan", "atan")
+    text = text.replace("arccos", "acos")
+    text = text.replace("arcsin", "asin")
     #print(f"\nfixed text: {text}")
 
     return text
@@ -81,3 +85,37 @@ def list_of_transcendental_functions():
     return ["pi", "exp", "log",  "power",
             "arcsin", "arccos", "arctan", "arctan2",
             "sin", "cos", "tan", "tanh"]
+
+
+def create_new_var_names(vars_z3):
+    new_vars_list = []
+    map_renamed_vars = []
+    dict_renamed_vars = {}
+    for i, var in enumerate(vars_z3):
+        if var.__str__() == "pi":
+            new_var_name = "pi"
+        else:
+            new_var_name = f"var_{i}"
+        if z3.is_real(var):
+            new_var = z3.Real(new_var_name)
+        elif z3.is_bool(var):
+            new_var = z3.Bool(new_var_name)
+        else: 
+            raise Exception("Unsupported kind for ", var)
+        new_vars_list.append(new_var)
+        map_renamed_vars.append((var, new_var))
+        dict_renamed_vars[new_var] = var
+    return new_vars_list, map_renamed_vars, dict_renamed_vars
+
+
+def rename_variables(formula, vars_z3):
+    formula = formula_to_BoolRef(formula)
+    new_vars_list, map_renamed_vars, dict_renamed_vars = create_new_var_names(vars_z3)
+    formula = z3.substitute(formula, map_renamed_vars)
+    return formula, new_vars_list, dict_renamed_vars
+
+def get_dict_original_names_vars(vars_sym, dict_sym2z3_vars, dict_r2b_vars, dict_renamed_vars):
+    dict_vars = {}
+    for var in vars_sym:
+        dict_vars[var] = dict_renamed_vars[dict_r2b_vars[dict_sym2z3_vars[var]]]
+    return dict_vars

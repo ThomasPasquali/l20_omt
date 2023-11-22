@@ -5,7 +5,7 @@ import numpy as np
 from sympy import lambdify, Array, sympify
 from sympy.utilities.autowrap import autowrap
 
-from utils.logic import get_vars, formula_to_BoolRef
+from utils.logic import get_vars_sym, formula_to_BoolRef
 
 def L2O(formula):
 
@@ -84,7 +84,7 @@ def L2O_lambda(args, formula, variables=None):
     formula = formula_to_BoolRef(formula)
 
     if not variables:
-        variables = get_vars(formula)
+        variables, dict_sym2z3_vars = get_vars_sym(formula)
 
     R = L2O(formula)
 

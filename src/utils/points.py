@@ -25,7 +25,7 @@ def get_assignment(local_min, variables):
 def printLocalMin(local_min):
     print("\nLocal min:\n\tPoint: %s\n\tValue: %s " %(local_min.point, local_min.value))
 
-def printAssignment(assignment):
+def printAssignment(assignment, dict_orig_name_vars):
     print("\nAssignment:")
-    for key, value in assignment.items():   
-        print("\tVar %s:\t\t%s " %(key, value))
+    for var, value in assignment.items():   
+        print("\tVar %s:\t\t%s " %(dict_orig_name_vars[var], value))
