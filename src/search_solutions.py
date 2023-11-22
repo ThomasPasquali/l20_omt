@@ -1,6 +1,5 @@
 import argparse
-from parser.parser import formula_from_text
-from utils.logic import get_vars, get_vars_z3, to_cnf, distribute_not, bool2real, sanitize_var_names, remove_pi_from_vars
+import z3
 from optimizer_interface import search_candidate_approximate_solutions
 from utils.points import sort_minima, printAssignment, printLocalMin
 
@@ -11,7 +10,12 @@ def main(args):
 
     formula = formula_from_text(text)
     formula = to_cnf(formula)
-
+    
+    formula_is_false = z3.is_false(formula)
+    if formula_is_false:
+        print("False")
+        return
+    
     vars_z3 = get_vars_z3(formula)
      
     formula, new_vars_list = sanitize_var_names(formula, vars_z3) # Sympy does not accept '!', '@', and '.' in variables names
