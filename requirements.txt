@@ -1,0 +1,8 @@
+z3-solver
+sympy
+scipy
+numpy
+cython
+loguru
+pretty
+pyglet

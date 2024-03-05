@@ -14,6 +14,10 @@ Theories supported :
   - scipy       (1.9.1)
   - numpy       (1.23.3)
   - cython      (3.0.5)
+  - and what listed in `requirements.txt`
+
+  ```pip install -r requirements.txt```
+
 ## How to run
 From the main folder:
 

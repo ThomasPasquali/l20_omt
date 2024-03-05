@@ -1,12 +1,12 @@
 
 from dataclasses import dataclass, field
 import numpy as np
+from loguru import logger as log
 
 @dataclass(order=True)
 class LocalMin:
     point: np.ndarray
     value: float
-
 
 def sort_minima(list_of_minima):
     list_of_minima.sort(key=lambda minimum : minimum.value)
@@ -23,9 +23,9 @@ def get_assignment(local_min, variables):
     return assignment
 
 def printLocalMin(local_min):
-    print("\nLocal min:\n\tPoint: %s\n\tValue: %s " %(local_min.point, local_min.value))
+    log.info("Local min:\n\tPoint: %s\n\tValue: %s " %(local_min.point, local_min.value))
 
 def printAssignment(assignment, dict_orig_name_vars):
-    print("\nAssignment:")
+    log.info("Assignment:")
     for var, value in assignment.items():   
-        print("\tVar %s:\t\t%s " %(dict_orig_name_vars[var], value))
+        log.info("\tVar %s:\t\t%s " %(dict_orig_name_vars[var], value))

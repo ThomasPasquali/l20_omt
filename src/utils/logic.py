@@ -28,12 +28,13 @@ def askey(n):
 def get_vars_z3_fast(f):
     r = set()
     def collect(f):
-      if z3.is_const(f): 
-          if f.decl().kind() == z3.Z3_OP_UNINTERPRETED and not f in r:
-              r.add(f)
-      else:
-          for c in f.children():
-              collect(c)
+        if z3.is_const(f): 
+            if f.decl().kind() == z3.Z3_OP_UNINTERPRETED and not f in r:
+                r.add(f)
+        else:
+            if hasattr(f, 'children'):
+                for c in f.children():
+                    collect(c)
     collect(f)
     return r
 

@@ -1,15 +1,86 @@
 
 import z3
+import re
 import sympy as sym
-import numpy as np
-from sympy import lambdify, Array, sympify
+from sympy import lambdify, Array, sympify, latex
 from sympy.utilities.autowrap import autowrap
 
 from utils.logic import get_vars_sym, formula_to_BoolRef
 
+def z3BoolRef_to_LaTex(formula, var_names):
+    formula = formula_to_BoolRef(formula)
+
+    decl_f = formula.decl()
+    kind_f = decl_f.kind()
+    subf = formula.children()[0]
+    decl_subf = subf.decl()
+    kind_subf = decl_subf.kind()
+
+    children = formula.children()
+    if kind_f == z3.Z3_OP_AND:
+        if len(children) == 1:
+            return latex(z3BoolRef_to_LaTex(children[0], var_names))
+        else:
+            return ' \wedge '.join([f'({z3BoolRef_to_LaTex(ch, var_names)})' for ch in children])
+
+    elif kind_f == z3.Z3_OP_OR:
+        return ' \vee '.join([f'({z3BoolRef_to_LaTex(ch, var_names)})' for ch in children])
+
+    elif kind_f == z3.Z3_OP_EQ or kind_f == z3.Z3_OP_LE or kind_f == z3.Z3_OP_LT or kind_f == z3.Z3_OP_GE or kind_f == z3.Z3_OP_GT:
+        return latex(sympify(formula.__str__()).subs(var_names))
+
+    elif kind_f == z3.Z3_OP_NOT:
+        if kind_subf == z3.Z3_OP_EQ:
+            # FIXME
+            return latex(sympify(formula.__str__()).subs(var_names))
+        elif kind_subf == z3.Z3_OP_UNINTERPRETED and subf.num_args()==0 :
+            raise Exception("Found negation of boolean")
+        else:
+            raise Exception("negation is supported only for equalities")
+    else:
+        raise Exception("kind %s of subformula not supported" % decl_f)
+
+# TODO double check all cases
+def z3BoolRef_to_SymPy(formula):
+    formula = formula_to_BoolRef(formula)
+
+    decl_f = formula.decl()
+    kind_f = decl_f.kind()
+    subf = formula.children()[0]
+    decl_subf = subf.decl()
+    kind_subf = decl_subf.kind()
+
+    children = formula.children()
+    if kind_f == z3.Z3_OP_AND:
+        if len(children) == 1:
+            return z3BoolRef_to_SymPy(children[0])
+        else:
+            return [z3BoolRef_to_SymPy(ch) for ch in children]
+
+    elif kind_f == z3.Z3_OP_OR:
+        return [z3BoolRef_to_SymPy(ch) for ch in children]
+
+    elif kind_f == z3.Z3_OP_EQ or kind_f == z3.Z3_OP_LE or kind_f == z3.Z3_OP_LT or kind_f == z3.Z3_OP_GE or kind_f == z3.Z3_OP_GT:
+        # FIXME move constants to let 0 on one side
+        if children[0].__str__() == '0':
+            return sympify(re.sub("ToReal\((\d+)\)", r'\1', children[1].__str__()))
+        else:
+            return sympify(re.sub("ToReal\((\d+)\)", r'\1', children[0].__str__()))
+
+    elif kind_f == z3.Z3_OP_NOT:
+        if kind_subf == z3.Z3_OP_EQ:
+            # FIXME
+            return sympify(formula.__str__())
+        elif kind_subf == z3.Z3_OP_UNINTERPRETED and subf.num_args()==0 :
+            raise Exception("Found negation of boolean")
+        else:
+            raise Exception("negation is supported only for equalities")
+    else:
+        raise Exception("kind %s of subformula not supported" % decl_f)
+
 def L2O(formula):
 
-    formula=  formula_to_BoolRef(formula)
+    formula = formula_to_BoolRef(formula)
 
     decl_f = formula.decl()
     kind_f = decl_f.kind()
@@ -88,6 +159,4 @@ def L2O_lambda(args, formula, variables=None):
 
     R = L2O(formula)
 
-    L = make_lambda(R, variables, args)
-
-    return L
+    return (R, make_lambda(R, variables, args))
